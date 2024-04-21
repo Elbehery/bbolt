@@ -11,7 +11,7 @@ import (
 	"go.etcd.io/bbolt/internal/btesting"
 )
 
-func TestCheckCommand_Run(t *testing.T) {
+func TestCheckCommand_CheckDB_Run(t *testing.T) {
 	db := btesting.MustCreateDB(t)
 	db.Close()
 	defer requireDBNoChange(t, dbData(t, db.Path()), db.Path())
@@ -22,7 +22,29 @@ func TestCheckCommand_Run(t *testing.T) {
 	rootCmd.SetOut(outputBuf)
 
 	rootCmd.SetArgs([]string{
-		"check", db.Path(),
+		"check", "db", db.Path(),
+	})
+	err := rootCmd.Execute()
+	require.NoError(t, err)
+
+	output, err := io.ReadAll(outputBuf)
+	require.NoError(t, err)
+	require.Equalf(t, "OK\n", string(output), "unexpected stdout:\n\n%s", string(output))
+}
+
+func TestCheckCommand_CheckPage_Run(t *testing.T) {
+	db := btesting.MustCreateDB(t)
+	db.Close()
+	defer requireDBNoChange(t, dbData(t, db.Path()), db.Path())
+
+	rootCmd := main.NewRootCommand()
+	// capture output for assertion
+	outputBuf := bytes.NewBufferString("")
+	rootCmd.SetOut(outputBuf)
+
+	rootCmd.SetArgs([]string{
+		"check", "page", db.Path(),
+		"--pageId", "3",
 	})
 	err := rootCmd.Execute()
 	require.NoError(t, err)
